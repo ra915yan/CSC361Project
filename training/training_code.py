@@ -55,6 +55,17 @@ if __name__ == "__main__":
     data = load_and_clean_data(DATA_PATH)
     X_train, X_test, y_train, y_test = prepare_splits(data)
     
+    
+    # ====== NEW CODE TO SAVE THE TEST SET ======
+    print("Saving isolated test set for GUI testing...")
+    test_df = pd.DataFrame({
+        'email': X_test,
+        'label': y_test
+    })
+    # Saves it right next to your raw data
+    test_df.to_csv('data_test_split.csv', index=False)
+    # ===========================================
+    
     # 3. Feature Extraction (TF-IDF Vectorization)
     print("\nVectorizing raw text datasets via TF-IDF...")
     vectorizer = TfidfVectorizer(max_features=5000, stop_words='english', ngram_range=(1, 2))
