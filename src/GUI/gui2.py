@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 import pandas as pd
 
-
+import config
 
 
 SAMPLE_EMAILS = [
@@ -27,6 +27,7 @@ class SimpleSpamGUI:
             try:
                 self.dataset = pd.read_csv("spam_or_not_spam.csv").dropna()
             except Exception:
+                print("couldn't load the dataset")
                 pass
 
         # Master Notebook setup for structural tabs

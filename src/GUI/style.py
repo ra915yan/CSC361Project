@@ -15,3 +15,6 @@ def apply_styles():
                     background="#f4f7fb", 
                     foreground="#1d2939", 
                     font=("Segoe UI", 16, "bold"))
+    
+    
+    

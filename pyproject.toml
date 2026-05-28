@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "csc361project"
+version = "0.1.0"
+dependencies = []             # Add your project dependencies here (e.g., pandas)
+
+[tool.setuptools.packages.find]
+where = ["src"]               # Tells Python to treat 'src' as the root package directory

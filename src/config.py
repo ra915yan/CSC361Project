@@ -1,9 +1,11 @@
 import os
 
 
-#return absolute path for the project
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# 1. Get the absolute path of config.py (e.g., .../src/config.py)
+CURRENT_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 2. Step up one level to reach the true project root folder (.../CSC361Project)
+BASE_DIR = os.path.dirname(CURRENT_FILE_DIR)
 # Data Path
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DATA1_PATH = os.path.join(DATA_DIR,"spam_or_not_spam.csv")
