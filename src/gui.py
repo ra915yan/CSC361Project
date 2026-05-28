@@ -11,7 +11,7 @@ class SimpleSpamGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Spam Detector Engine")
-        self.root.geometry("850x650")
+        self.root.geometry("1280x720")
         
         # Initialize the dataset instance safely
         try:
@@ -66,7 +66,13 @@ class SimpleSpamGUI:
         self.lbl_result = tk.Label(left_button_frame, text="Prediction: None", font=("Arial", 11, "bold"))
         self.lbl_result.pack(side="top", pady=20)
 
-        self.text_input = tk.Text(self.tab_model, wrap="word")
+# Configured with a clean font family (Arial) and a larger size (14)
+        self.text_input = tk.Text(
+            self.tab_model, 
+            wrap="word", 
+            font=("Arial", 14)
+        )
+        
         self.text_input.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
     def setup_plot_tab(self):
@@ -103,7 +109,10 @@ class SimpleSpamGUI:
 
         # Fire once initially right after rendering finishes to show the default option image
         self.root.after(150, self.render_saved_plot)
-
+        
+        
+        
+        
     # ==========================================
     # LOGIC COMPONENT FUNCTIONALITIES
     # ==========================================
