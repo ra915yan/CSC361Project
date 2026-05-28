@@ -174,7 +174,6 @@ class SimpleSpamGUI:
         if not target_filename:
             return
 
-        # Target the file safely inside the data directory utilizing config module rules
         target_img_path = os.path.join(config.DATA_DIR, target_filename)
         
         if not os.path.exists(target_img_path):
@@ -186,12 +185,21 @@ class SimpleSpamGUI:
             return
 
         try:
-            # Load and pin the new image element natively using PhotoImage
-            self.plot_img = tk.PhotoImage(file=target_img_path)
+            # 1. Load the raw image binary
+            raw_img = tk.PhotoImage(file=target_img_path)
+            
+            # 2. Downsample the image dynamically by a factor of 2 to make it fit the screen
+            # (e.g., if it's 1400x1000, it becomes a crisp 700x500 window size)
+            self.plot_img = raw_img.subsample(2, 2)
+            
+            # 3. Bind the scaled asset to your display container label
             self.image_container.config(image=self.plot_img, text="")
+            
         except Exception as e:
             self.image_container.config(image="", text=f"Rendering Failure: Failed to decode image file.\n{e}")
-
+            
+            
+            
 if __name__ == "__main__":
     app_root = tk.Tk()
     app = SimpleSpamGUI(app_root)
