@@ -4,6 +4,3 @@ __pycache__/
 # Ignore temporary files created by extensions
 tempCodeRunnerFile.py
 
-# Ignore local environment artifacts (optional, but good practice)
-*.pyc
-*.pkl

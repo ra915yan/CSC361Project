@@ -1,161 +1,188 @@
 import os
+import random
 import tkinter as tk
 from tkinter import messagebox, ttk
-
+import pandas as pd
+from SpamNotSpamDataset import SpamNotSpamDataset
+import config
 import joblib
 
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, "trained_models")
-MODEL_PATH = os.path.join(MODEL_DIR, "spam_detector_model.pkl")
-VECTORIZER_PATH = os.path.join(MODEL_DIR, "tfidf_vectorizer.pkl")
-
-
-class SpamDetectorApp:
+class SimpleSpamGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Spam Email Detector")
-        self.root.geometry("760x560")
-        self.root.minsize(620, 480)
-        self.root.configure(bg="#f4f7fb")
-
-        self.model = None
-        self.vectorizer = None
-
-        self._configure_styles()
-        self._build_ui()
-        self._load_artifacts()
-
-    def _configure_styles(self):
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("TFrame", background="#f4f7fb")
-        style.configure("Header.TLabel", background="#f4f7fb", foreground="#1d2939", font=("Segoe UI", 22, "bold"))
-        style.configure("Body.TLabel", background="#f4f7fb", foreground="#475467", font=("Segoe UI", 11))
-        style.configure("Result.TLabel", background="#ffffff", foreground="#1d2939", font=("Segoe UI", 18, "bold"))
-        style.configure("Hint.TLabel", background="#ffffff", foreground="#667085", font=("Segoe UI", 10))
-        style.configure("Primary.TButton", font=("Segoe UI", 11, "bold"), padding=(14, 9))
-        style.configure("Secondary.TButton", font=("Segoe UI", 10), padding=(12, 8))
-
-    def _build_ui(self):
-        main = ttk.Frame(self.root, padding=24)
-        main.pack(fill="both", expand=True)
-
-        ttk.Label(main, text="Spam Email Detector", style="Header.TLabel").pack(anchor="w")
-        ttk.Label(
-            main,
-            text="Paste an email message below, then check whether the trained model classifies it as spam.",
-            style="Body.TLabel",
-        ).pack(anchor="w", pady=(6, 18))
-
-        input_frame = tk.Frame(main, bg="#ffffff", bd=1, relief="solid", highlightthickness=0)
-        input_frame.pack(fill="both", expand=True)
-
-        self.email_text = tk.Text(
-            input_frame,
-            wrap="word",
-            height=14,
-            bg="#ffffff",
-            fg="#101828",
-            insertbackground="#101828",
-            relief="flat",
-            font=("Segoe UI", 11),
-            padx=14,
-            pady=14,
-        )
-        self.email_text.pack(fill="both", expand=True)
-
-        button_row = ttk.Frame(main)
-        button_row.pack(fill="x", pady=16)
-
-        ttk.Button(button_row, text="Check Email", style="Primary.TButton", command=self.check_email).pack(side="left")
-        ttk.Button(button_row, text="Clear", style="Secondary.TButton", command=self.clear_text).pack(side="left", padx=(10, 0))
-
-        result_frame = tk.Frame(main, bg="#ffffff", bd=1, relief="solid")
-        result_frame.pack(fill="x")
-
-        self.result_label = tk.Label(
-            result_frame,
-            text="Result will appear here",
-            bg="#ffffff",
-            fg="#1d2939",
-            font=("Segoe UI", 18, "bold"),
-            anchor="w",
-        )
-        self.result_label.pack(anchor="w", padx=16, pady=(14, 4))
-
-        self.detail_label = tk.Label(
-            result_frame,
-            text="Model files loaded from trained_models.",
-            bg="#ffffff",
-            fg="#667085",
-            font=("Segoe UI", 10),
-            anchor="w",
-        )
-        self.detail_label.pack(anchor="w", padx=16, pady=(0, 14))
-
-    def _load_artifacts(self):
+        self.root.title("Spam Detector Engine")
+        self.root.geometry("700x500")
+        
+        # Initialize the dataset instance safely
         try:
-            self.vectorizer = joblib.load(VECTORIZER_PATH)
-            self.model = joblib.load(MODEL_PATH)
-        except FileNotFoundError as exc:
-            messagebox.showerror(
-                "Missing model files",
-                f"Could not find required file:\n{exc.filename}\n\nRun test.py first to create the trained_models files.",
+            self.dataset = SpamNotSpamDataset()
+        except Exception as e:
+            print(f"Failed to load dataset on startup: {e}")
+            self.dataset = None
+            
+        # 2. Load the ML Model and Vectorizer safely from config paths
+        try:
+            self.vectorizer = joblib.load(config.VECTORIZER_PATH)
+            self.model = joblib.load(config.MODEL_PATH)
+            self.model_loaded = True
+        except Exception as e:
+            print(f"Failed to load ML artifacts: {e}")
+            self.model_loaded = False
+            self.vectorizer = None
+            self.model = None
+
+        # Master Notebook setup for structural tabs
+        self.notebook = ttk.Notebook(root)
+        self.notebook.pack(fill="both", expand=True)
+
+        # Initialize the Layout Tabs
+        self.tab_model = ttk.Frame(self.notebook)
+        self.tab_plot = ttk.Frame(self.notebook)
+
+        self.notebook.add(self.tab_model, text="Model Predictor")
+        self.notebook.add(self.tab_plot, text="Analytics Plot")
+
+        # Build individual layouts
+        self.setup_model_tab()
+        self.setup_plot_tab()
+
+    def setup_model_tab(self):
+        """Builds a layout with left side button panel and right side text field."""
+        # Left Side Sub-Container for Buttons
+        left_button_frame = tk.Frame(self.tab_model)
+        left_button_frame.pack(side="left", fill="y", padx=10, pady=10)
+
+        # Container row inside the left panel to hold the button and label side-by-side
+        random_frame = tk.Frame(left_button_frame)
+        random_frame.pack(side="top", fill="x", pady=5)
+
+        self.btn_random = tk.Button(random_frame, text="Random Sample", width=15, command=self.get_random_sample)
+        self.btn_random.pack(side="left")
+        
+        # The true indicator label placed directly beside the random button
+        self.lbl_isSpam = tk.Label(random_frame, text="[Ground Truth]", fg="blue", font=("Arial", 10, "bold"))
+        self.lbl_isSpam.pack(side="left", padx=10)
+
+        # Other action buttons inside the left panel
+        self.btn_predict = tk.Button(left_button_frame, text="Predict / Run Model", width=30, command=self.predict_text)
+        self.btn_predict.pack(side="top", pady=5)
+        
+        self.lbl_result = tk.Label(left_button_frame, text="Prediction: None", font=("Arial", 11, "bold"))
+        self.lbl_result.pack(side="top", pady=20)
+
+        # Right Side Big Text Area
+        self.text_input = tk.Text(self.tab_model, wrap="word")
+        self.text_input.pack(side="right", fill="both", expand=True, padx=10, pady=10)
+
+    def setup_plot_tab(self):
+        """Loads and draws the pre-generated image artifact on tab activation."""
+        btn_load_plot = tk.Button(self.tab_plot, text="Render Chart Image", command=self.render_saved_plot)
+        btn_load_plot.pack(anchor="n", pady=5)
+
+        self.image_container = tk.Label(self.tab_plot, text="[ Image Asset Not Loaded Yet ]")
+        self.image_container.pack(fill="both", expand=True, pady=10)
+
+    # ==========================================
+    # LOGIC COMPONENT FUNCTIONALITIES
+    # ==========================================
+    def get_random_sample(self):
+        """Pulls a random string record and sets both text field and truth label."""
+        if self.dataset is None:
+            self.text_input.delete("1.0", tk.END)
+            self.text_input.insert("1.0", "ERROR: Dataset not loaded.")
+            self.lbl_isSpam.config(text="Label: Error", fg="red")
+            return
+
+        try:
+            # 1. Fetch the raw series from the dataset class
+            sample_row = self.dataset.get_random_sample()
+            
+            # 2. Extract values mapped directly to your CSV headers ('email', 'label')
+            email_text = sample_row['email'] 
+            true_label = str(sample_row['label']).strip()
+            
+            # 3. Format the status label display text (Handles both 1/0 and Text classifications)
+            if true_label == "1" or "spam" in true_label.lower():
+                label_display = "(SPAM)"
+                label_color = "red"
+            else:
+                label_display = "(Not SPAM)"
+                label_color = "green"
+            
+        except Exception as e:
+            email_text = f"ERROR: Failed to load data row: {e}"
+            label_display = "(ERROR)"
+            label_color = "red"
+
+        # Update text input UI component
+        self.text_input.delete("1.0", tk.END)
+        self.text_input.insert("1.0", email_text)
+        
+        # Update ground truth classification indicator label beside button
+        self.lbl_isSpam.config(text=label_display, fg=label_color)
+
+    def predict_text(self):
+        """Reads input text string, vectorizes it, and runs the loaded model."""
+        # 1. Structural Guard: Ensure model artifacts exist
+        if not self.model_loaded or self.model is None or self.vectorizer is None:
+            messagebox.showerror("Model Error", "Model or Vectorizer artifacts are not loaded.")
+            return
+
+        # 2. Read input from the text widget
+        raw_string = self.text_input.get("1.0", tk.END).strip()
+        if not raw_string:
+            messagebox.showwarning("Empty String", "Please input text or generate a sample first.")
+            return
+
+        try:
+            # 3. Transform the raw text into numerical features
+            # Input must be inside a list/array structure: [raw_string]
+            vectorized_text = self.vectorizer.transform([raw_string])
+            
+            # 4. Generate prediction (returns an array, e.g., [1] or [0])
+            prediction = self.model.predict(vectorized_text)[0]
+            
+            # 5. Check if probabilities are available for extra UI confidence detail
+            if hasattr(self.model, "predict_proba"):
+                probabilities = self.model.predict_proba(vectorized_text)[0]
+                confidence = probabilities[prediction] * 100
+                confidence_str = f" ({confidence:.1f}% Confidence)"
+            else:
+                confidence_str = ""
+
+            # 6. Update the UI Label display based on prediction output
+            if str(prediction) == "1" or (isinstance(prediction, str) and "spam" in prediction.lower()):
+                self.lbl_result.config(
+                    text=f"Prediction: SPAM (1){confidence_str}", 
+                    fg="red"
+                )
+            else:
+                self.lbl_result.config(
+                    text=f"Prediction: SAFE (0){confidence_str}", 
+                    fg="green"
+                )
+                
+        except Exception as e:
+            messagebox.showerror("Inference Error", f"Failed to execute model prediction:\n{e}")
+
+    def render_saved_plot(self):
+        """Reads the distribution chart generated during data exploration steps."""
+        target_img = "spam_distribution.png"
+        
+        if not os.path.exists(target_img):
+            self.image_container.config(
+                text=f"Error: image code couldn't locate '{target_img}' in local directory.\n"
+                     f"Please run your training/explore_data.py pipeline script to save it first!"
             )
-            self.detail_label.config(text="Model files are missing.")
-        except Exception as exc:
-            messagebox.showerror("Load error", f"Could not load the trained model:\n{exc}")
-            self.detail_label.config(text="The trained model could not be loaded.")
-
-    def check_email(self):
-        email = self.email_text.get("1.0", "end").strip()
-
-        if not email:
-            messagebox.showwarning("No email text", "Please paste or type an email message first.")
-            return
-
-        if self.model is None or self.vectorizer is None:
-            messagebox.showerror("Model unavailable", "The model is not loaded. Check the trained_models folder.")
             return
 
         try:
-            email_vector = self.vectorizer.transform([email])
-            if email_vector.nnz == 0:
-                self.result_label.config(text="Not Spam", fg="#027a48")
-                self.detail_label.config(text="This text is too short/simple for a confident model score.")
-                return
-
-            prediction = self.model.predict(email_vector)[0]
-        except Exception as exc:
-            messagebox.showerror("Prediction error", f"Could not check this email:\n{exc}")
-            return
-
-        probability_text = ""
-        if hasattr(self.model, "predict_proba"):
-            probabilities = self.model.predict_proba(email_vector)[0]
-            classes = list(self.model.classes_)
-            predicted_index = classes.index(prediction)
-            confidence = probabilities[predicted_index] * 100
-            probability_text = f"Confidence: {confidence:.1f}%"
-
-        prediction_text = str(prediction).strip().lower()
-        is_spam = prediction_text in {"1", "spam"}
-
-        if is_spam:
-            self.result_label.config(text="Spam", fg="#b42318")
-            self.detail_label.config(text=probability_text or "The message looks like spam.")
-        else:
-            self.result_label.config(text="Not Spam", fg="#027a48")
-            self.detail_label.config(text=probability_text or "The message looks safe.")
-
-    def clear_text(self):
-        self.email_text.delete("1.0", "end")
-        self.result_label.config(text="Result will appear here", fg="#1d2939")
-        self.detail_label.config(text="Paste another email to check it.")
-
+            self.plot_img = tk.PhotoImage(file=target_img)
+            self.image_container.config(image=self.plot_img, text="")
+        except Exception as e:
+            messagebox.showerror("Image Load Error", f"Failed to open image element:\n{e}")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = SpamDetectorApp(root)
-    root.mainloop()
+    app_root = tk.Tk()
+    app = SimpleSpamGUI(app_root)
+    app_root.mainloop()
