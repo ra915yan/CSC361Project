@@ -18,6 +18,8 @@ MODEL_DIR = os.path.join(BASE_DIR,"models")
 MODEL_PATH = os.path.join(MODEL_DIR, "spam_detector_model.pkl")
 VECTORIZER_PATH = os.path.join(MODEL_DIR, "tfidf_vectorizer.pkl")
 
+# Inside your gui2.py file change target_img to look here:
+target_img = os.path.join(DATA_DIR, "spam_distribution.png")
 
 
 # for tuning
@@ -25,3 +27,4 @@ VECTORIZER_PATH = os.path.join(MODEL_DIR, "tfidf_vectorizer.pkl")
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
 MAX_FEATURE = 5000
+
